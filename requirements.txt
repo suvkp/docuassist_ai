@@ -1,0 +1,16 @@
+sentence-transformers
+transformers
+ipykernel
+jupyter
+llama-index
+langchain
+pypdf
+einops
+accelerate
+bitsandbytes
+torch
+llama-parse
+llama-index-postprocessor-flag-embedding-reranker
+peft
+streamlit
+python-dotenv
