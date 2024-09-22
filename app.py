@@ -20,6 +20,13 @@ from llama_index.core.prompts.prompt_type import PromptType
 # from llama_index.postprocessor.flag_embedding_reranker import FlagEmbeddingReranker
 from dotenv import load_dotenv
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ServiceRequestError,
+    ResourceNotFoundError,
+    AzureError
+)
 
 # Load environment variables
 load_dotenv()
@@ -63,16 +70,19 @@ def get_page_nodes(docs, separator="\n---\n"):
 #     chunks = text_splitter.split_text(text)
 #     return chunks
 
+# Document chunker
 def llama_index_transform(text):
     doc = Document(text=text)
     node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=200)
     nodes = node_parser.get_nodes_from_documents([doc], show_progress=False)
     return nodes
 
+# Document parser that convert complex PDFs (with tables, images, etc) to markdown
 def parse_with_llama_parser(file_path):
     document = LlamaParse(result_type="markdown").load_data(file_path=file_path)
     return document
-    
+
+# Function to parse the markdown document chunks and extract objects (tables, image, etc)
 def transform(document, llm, embed_model):
     page_nodes = get_page_nodes(document)
     node_parser = MarkdownElementNodeParser(llm=llm, num_workers=8)
@@ -80,10 +90,12 @@ def transform(document, llm, embed_model):
     base_nodes, objects = node_parser.get_nodes_and_objects(nodes)
     return base_nodes, objects, page_nodes
 
+# Function to convert document chunks and objects into vectors & store them in temporary vector stores
 def vector_store(nodes):
     recursive_index = VectorStoreIndex(nodes=nodes)
     return recursive_index
 
+# Function to retrieve LLM response by combining user prompt and retrieved information into a prompt template
 def retriever(index):
     DEFAULT_TEXT_QA_PROMPT_TMPL = (
         "Context information is below.\n"
@@ -111,61 +123,75 @@ def main():
     Settings.llm = llm
     Settings.embed_model = embed_model
 
-    # app interface
-    st.header("📝 RAG based Chat with PDF")
+    # ----------------------- App interface - header & uploaded -------------------------
+    st.header("📝 Large Document Reader")
     st.info("Please upload a file first")
-    uploaded_file = st.file_uploader("Upload a file", type="pdf")
+    uploaded_file = st.file_uploader("Upload a file", type=["pdf","xlsx","doc"])
     if uploaded_file is not None:
         if st.button("Submit & Process"):
             with st.spinner("Processing..."):
-                # Upload the file to the Azure Blog Storage (only if the file is not present there already)
+                # --------------- Establish connection to cloud storage -----------------
+                # Open the file (as write binary) & write it to temporary storage
                 with open(uploaded_file.name, "wb") as temp_file:
                     temp_file.write(uploaded_file.getbuffer())
+                # Connect to azure blob service
                 blob_service_client = BlobServiceClient(
                     f"https://{AZ_BLOB_ACC_NAME}.blob.core.windows.net", credential=AZ_BLOB_KEY
                 )
                 blob_client = blob_service_client.get_blob_client(container=AZ_CONTAINER_NAME, blob=uploaded_file.name)
+                # Upload the file to the Azure Blog Storage (only if the file is not present there already)
                 try:
                     blob_properties = blob_client.get_blob_properties()
                     file_exists = True
                 except Exception as e:
                     file_exists = False
                 if file_exists:
-                    print("File found in Azure Blob Storage. Downloading...")
+                    st.success("File found in Azure Blob Storage. Downloading...")
                 else:
-                    print("File not found in Azure Blob Storage. Uploading...")
-                    with open(uploaded_file.name, "rb") as data:
-                        blob_client.upload_blob(data, overwrite=True)
-                        st.success("File uploaded successfully!")
+                    try:
+                        st.success("File not found in Azure Blob Storage. Uploading...")
+                        with open(uploaded_file.name, "rb") as data:
+                            blob_client.upload_blob(data, overwrite=True)
+                            st.success("File uploaded successfully!")
+                    except ResourceNotFoundError as e:
+                        st.error(f"Unable to access Azure. Check your accessibility!")
                 # Download the file from Azure Blob Storage
                 local_file_path = os.path.join(os.getcwd(), uploaded_file.name)
                 with open(local_file_path, "wb") as download_file:
                     download_file.write(blob_client.download_blob().readall())
                     st.success("File downloaded successfully!")
 
-                
-                # st.write(f"File is accessible at: {file_url}")
+                # --------------- Define session variables for RAG -----------------
+                st.success("Reading the document ...")
                 st.session_state.markdown_document = parse_with_llama_parser(local_file_path)
                 st.session_state.base_nodes, st.session_state.objects, st.session_state.page_nodes = transform(st.session_state.markdown_document, llm, embed_model)
-                # st.session_state.raw_text = parse_pdf_with_pdfplumber(uploaded_file)
-                # st.session_state.nodes = llama_index_transform(st.session_state.raw_text)
                 st.session_state.index = vector_store(nodes=st.session_state.base_nodes + st.session_state.objects + st.session_state.page_nodes)
                 st.session_state.retriever = retriever(st.session_state.index)
                 st.success("Done! Now ask me a question")
 
-    st.caption("User:")
-    user_question = st.text_input(
-        "Ask something from the file",
-        placeholder="Can you give me a short summary?",
-        disabled=not uploaded_file,
-    )
-    
-    if user_question:
-        with st.spinner("Responding..."):
-            st.caption("Chat Agent:")
-            st.session_state.response = st.session_state.retriever.query(user_question)
-            st.info(st.session_state.response)
+    # ---------------- App interface - Chat function -----------------
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Display chat messages from history on app rerun
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # React to user input
+    if prompt := st.chat_input("Ask me a question", disabled= not uploaded_file):
+        # Display user message in chat message container
+        st.chat_message("user").markdown(prompt)
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        st.session_state.response = st.session_state.retriever.query(prompt)
+        # Display assistant response in chat message container
+        with st.chat_message("assistant"):
+            st.markdown(st.session_state.response)
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": st.session_state.response})
 
 if __name__ == '__main__':
     main()
-

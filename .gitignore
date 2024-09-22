@@ -36,6 +36,9 @@ env/
 .idea/
 .vscode/
 
+# Ignore other config files
+.streamlit/
+
 # Ignore compiled assets in front-end projects
 /dist/
 build/
