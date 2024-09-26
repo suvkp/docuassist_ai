@@ -7,59 +7,22 @@ from llama_index.core import Settings
 from core.doc_processor import DocumentProcessor
 from core.retriever import create_query_engine
 from core.index import vector_store
+from ui.side_panel import side_panel
 
 # -------------- App interface - Side bar --------------
-with st.sidebar:
-
-    st.markdown(
-            "## How to use\n"
-            "1. Enter your OpenAI & Llama Cloud API keys below🔑\n" 
-            "2. Upload a pdf, docx, or txt file📄\n"
-            "3. Ask a question about the document💬\n"
-        )
-
-    openai_api_key_input = st.text_input(
-            "OpenAI API Key",
-            type="password",
-            placeholder="Paste your OpenAI API key here (sk-...)",
-            help="You can get your API key from https://platform.openai.com/account/api-keys.",
-            value=st.session_state.get("OPENAI_API_KEY", "") # os.environ.get("OPENAI_API_KEY", None)
-        )
-    st.session_state["OPENAI_API_KEY"] = openai_api_key_input
-
-    llama_api_key_input = st.text_input(
-            "Llama Cloud API Key",
-            type="password",
-            placeholder="Paste your Llama Cloud API key here (lxx-...)",
-            help="You can get your API key from https://cloud.llamaindex.ai/api-key.",
-            value=st.session_state.get("LLAMA_API_KEY", "")
-        )
-    st.session_state["LLAMA_API_KEY"] = llama_api_key_input
-
-    st.markdown("---")
-    st.markdown("# About")
-    st.markdown(
-        "📝 DocuAssist AI assist you going through large and complex documentation by answering your \
-        questions related to the document."
-    )
-    st.markdown(
-        "This tool is a work in progress."
-        "Feedback and suggestions are most welcome!"
-    )
-    st.markdown("Made by [suvkp](https://github.com/suvkp)")
-    st.markdown("---")
+api_key = side_panel()
 
 # ---------------------------------------------------------------
 # setup global variables
 embed_model = OpenAIEmbedding(model="text-embedding-3-small")
-llm = OpenAI(model="gpt-4o-mini-2024-07-18", api_key=openai_api_key_input)
+llm = OpenAI(model="gpt-4o-mini-2024-07-18", api_key=api_key[0])
 Settings.llm = llm
 Settings.embed_model = embed_model
 
 # -------------- App interface - header & uploader --------------
 st.header("📝 DocuAssist AI")
 
-uploaded_file = st.file_uploader("Upload a file", type=["pdf","xlsx","doc"], disabled= not openai_api_key_input)
+uploaded_file = st.file_uploader("Upload a file", type=["pdf","xlsx","doc"], disabled= (not api_key[0] and not api_key[1]))
 
 # document_processed = False
 if uploaded_file is not None:
