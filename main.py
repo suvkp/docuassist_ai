@@ -32,7 +32,7 @@ if uploaded_file is not None:
             file_path = os.path.join('resource/', uploaded_file.name)
             with open(file_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
-            st.session_state.base_nodes, st.session_state.objects, st.session_state.page_nodes = DocumentProcessor().transform(file_path, llm, embed_model)
+            st.session_state.base_nodes, st.session_state.objects, st.session_state.page_nodes = DocumentProcessor(llama_parser_api_key=api_keys[1]).transform(file_path, llm, embed_model)
             st.session_state.index = vector_store(nodes=st.session_state.base_nodes + st.session_state.objects + st.session_state.page_nodes)
             st.session_state.retriever = create_query_engine(st.session_state.index)
             st.success("Done! Now ask me a question.")

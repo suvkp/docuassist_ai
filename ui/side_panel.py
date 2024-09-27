@@ -29,7 +29,7 @@ def side_panel():
             )
         st.session_state["LLAMA_API_KEY"] = llama_api_key_input
 
-        st.button("Submit")
+        # st.button("Submit")
 
         st.markdown("---")
         st.markdown("# About")
