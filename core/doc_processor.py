@@ -9,7 +9,6 @@ from llama_index.core.node_parser import MarkdownElementNodeParser
 class DocumentProcessor:
     def __init__(self, llama_parser_api_key=None):
         self.llama_parser_api_key = llama_parser_api_key
-        return self
 
     def transform(self, uploaded_file, llm, embed_model):
         """
