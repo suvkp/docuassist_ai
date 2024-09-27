@@ -14,7 +14,7 @@ api_keys = side_panel()
 
 # ---------------------------------------------------------------
 # setup global variables
-embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+embed_model = OpenAIEmbedding(model="text-embedding-3-small", api_key=api_keys[0])
 llm = OpenAI(model="gpt-4o-mini-2024-07-18", api_key=api_keys[0])
 Settings.llm = llm
 Settings.embed_model = embed_model
