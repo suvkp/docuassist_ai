@@ -9,6 +9,7 @@ from llama_index.core.node_parser import MarkdownElementNodeParser
 class DocumentProcessor:
     def __init__(self, llama_parser_api_key=None):
         self.llama_parser_api_key = llama_parser_api_key
+        return self
 
     def transform(self, uploaded_file, llm, embed_model):
         """
@@ -21,11 +22,11 @@ class DocumentProcessor:
         page_nodes = self._get_page_nodes(markdown_doc) # type: ignore
         return base_nodes, objects, page_nodes
 
-    def _parse(self, file_path, api_key=self.llama_parser_api_key):
+    def _parse(self, file_path):
         """
         Parse the uploaded file into markdown
         """
-        parser = LlamaParse(result_type="markdown", api_key=api_key)
+        parser = LlamaParse(result_type="markdown", api_key=self.llama_parser_api_key)
         document = parser.load_data(file_path)
         # directly parse the uploaded file object
         # with open(f'./{uploaded_file.name}', "rb") as f:
