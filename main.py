@@ -10,19 +10,19 @@ from core.index import vector_store
 from ui.side_panel import side_panel
 
 # -------------- App interface - Side bar --------------
-api_key = side_panel()
+api_keys = side_panel()
 
 # ---------------------------------------------------------------
 # setup global variables
 embed_model = OpenAIEmbedding(model="text-embedding-3-small")
-llm = OpenAI(model="gpt-4o-mini-2024-07-18", api_key=api_key[0])
+llm = OpenAI(model="gpt-4o-mini-2024-07-18", api_key=api_keys[0])
 Settings.llm = llm
 Settings.embed_model = embed_model
 
 # -------------- App interface - header & uploader --------------
 st.header("📝 DocuAssist AI")
 
-uploaded_file = st.file_uploader("Upload a file", type=["pdf","xlsx","doc"], disabled= (not api_key[0] and not api_key[1]))
+uploaded_file = st.file_uploader("Upload a file", type=["pdf","xlsx","doc"], disabled= (not api_keys[1] or not api_keys[0]))
 
 # document_processed = False
 if uploaded_file is not None:
