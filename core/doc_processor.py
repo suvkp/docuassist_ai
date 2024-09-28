@@ -5,6 +5,9 @@ from llama_index.core import VectorStoreIndex
 from llama_index.core import Document
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.node_parser import MarkdownElementNodeParser
+import nest_asyncio
+
+nest_asyncio.apply()
 
 class DocumentProcessor:
     def __init__(self, llama_parser_api_key=None):
