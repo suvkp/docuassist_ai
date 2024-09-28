@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+import openai
 import streamlit as st
 from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.openai import OpenAIEmbedding
@@ -7,22 +8,66 @@ from llama_index.core import Settings
 from core.doc_processor import DocumentProcessor
 from core.retriever import create_query_engine
 from core.index import vector_store
-from ui.side_panel import side_panel
+# from ui.side_panel import side_panel
 
 # -------------- App interface - Side bar --------------
-api_keys = side_panel()
+# api_keys = side_panel()
+with st.sidebar:
+    st.markdown(
+            "## How to use\n"
+            "1. Enter your OpenAI & Llama Cloud API keys below🔑\n" 
+            "2. Upload a pdf, docx, or txt file📄\n"
+            "3. Ask a question about the document💬\n"
+        )
 
+    openai.api_key = st.text_input(
+            "OpenAI API Key",
+            type="password",
+            placeholder="Paste your OpenAI API key here (sk-...)",
+            help="You can get your API key from https://platform.openai.com/account/api-keys.",
+            value=st.session_state.get("OPENAI_API_KEY", "") # os.environ.get("OPENAI_API_KEY", None)
+        )
+    if not openai.api_key.startswith('sk-'):
+        st.warning('Please enter your credentials!', icon='⚠️')
+    else:
+        st.success('Proceed to upload your file!', icon='👉')
+
+    # st.session_state["OPENAI_API_KEY"] = openai_api_key_input
+    
+    # llama_api_key_input = st.text_input(
+    #         "Llama Cloud API Key",
+    #         type="password",
+    #         placeholder="Paste your Llama Cloud API key here (lxx-...)",
+    #         help="You can get your API key from https://cloud.llamaindex.ai/api-key.",
+    #         value=st.session_state.get("LLAMA_API_KEY", "")
+    #     )
+    # st.session_state["LLAMA_API_KEY"] = llama_api_key_input
+
+    # st.button("Submit")
+
+    st.markdown("---")
+    st.markdown("# About")
+    st.markdown(
+        "📝 DocuAssist AI assist you in going through large and complex documentation by answering your \
+        questions related to the document."
+    )
+    st.markdown(
+        "This tool is a work in progress. "
+        "Feedback and suggestions are most welcome!"
+    )
+    st.markdown("Made by [suvkp](https://github.com/suvkp)")
+    st.markdown("---")
 # ---------------------------------------------------------------
 # setup global variables
-embed_model = OpenAIEmbedding(model="text-embedding-3-small", api_key=api_keys[0])
-llm = OpenAI(model="gpt-4o-mini-2024-07-18", api_key=api_keys[0])
+embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+llm = OpenAI(model="gpt-4o-mini-2024-07-18")
 Settings.llm = llm
 Settings.embed_model = embed_model
 
 # -------------- App interface - header & uploader --------------
 st.header("📝 DocuAssist AI")
 
-uploaded_file = st.file_uploader("Upload a file", type=["pdf","xlsx","doc"], disabled= (not api_keys[1] or not api_keys[0]))
+uploaded_file = st.file_uploader("Upload a file", type=["pdf","xlsx","doc"], disabled=(len(openai.api_key)==0))
 
 # document_processed = False
 if uploaded_file is not None:
@@ -32,7 +77,8 @@ if uploaded_file is not None:
             file_path = os.path.join('resource/', uploaded_file.name)
             with open(file_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
-            st.session_state.base_nodes, st.session_state.objects, st.session_state.page_nodes = DocumentProcessor(llama_parser_api_key=api_keys[1]).transform(file_path, llm, embed_model)
+            st.session_state.base_nodes, st.session_state.objects, st.session_state.page_nodes = DocumentProcessor(llama_parser_api_key=st.secrets. \
+                                                                                                                   get("LLAMA_CLOUD_API_KEY")).transform(file_path, llm, embed_model)
             st.session_state.index = vector_store(nodes=st.session_state.base_nodes + st.session_state.objects + st.session_state.page_nodes)
             st.session_state.retriever = create_query_engine(st.session_state.index)
             st.success("Done! Now ask me a question.")
