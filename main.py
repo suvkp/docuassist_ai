@@ -13,7 +13,7 @@ from core.index import vector_store
 with st.sidebar:
     st.markdown(
             "## How to use\n"
-            "1. Enter your OpenAI & Llama Cloud API keys below🔑\n" 
+            "1. Enter your OpenAI key below🔑\n" 
             "2. Upload a pdf, docx, or txt file📄\n"
             "3. Ask a question about the document💬\n"
         )
@@ -45,7 +45,7 @@ with st.sidebar:
 # ---------------------------------------------------------------
 # setup global variables
 embed_model = OpenAIEmbedding(model="text-embedding-3-small")
-llm = OpenAI(model="gpt-3.5-turbo")
+llm = OpenAI(model="gpt-4o-mini")
 Settings.llm = llm
 Settings.embed_model = embed_model
 
