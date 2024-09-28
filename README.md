@@ -1,4 +1,4 @@
-# DocuAssist AI
+# 📝 DocuAssist AI
 
 Assists you in assessing long documents in no time.
 
