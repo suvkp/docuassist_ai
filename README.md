@@ -3,6 +3,7 @@ _Assists you in assessing long documents in no time._
 
 ## Try Out
 **Demo**
+
 [Demo](https://www.youtube.com/watch?v=_6xluxeEoPY) 
 
 **How to use?**
@@ -74,9 +75,26 @@ context extraction).
 interface for document uploads and interaction. Users are required to input their
 OpenAI API key to use the application
 * Backend:
-  * LlamaParse: Responsible for parsing the PDF files and generating the initial
+ * LlamaParse: Responsible for parsing the PDF files and generating the initial
 text data for processing.
-  * Llama Index: Handles the indexing, transformation (chunking), and storage of
+ * Llama Index: Handles the indexing, transformation (chunking), and storage of
 the parsed document content.
-  * OpenAI APIs: Powers the Q&A functionalities using OpenAI's models for
+ * OpenAI APIs: Powers the Q&A functionalities using OpenAI's models for
 language understanding and response generation.
+
+![image](https://github.com/user-attachments/assets/6aa15f73-2c4e-43e4-b69e-95f1c6ff83d0)
+
+### API Endpoints
+The application integrates with several key API endpoints:
+* OpenAI: Provides access to the GPT-4o model for generating responses and the text
+embedding model for parsing documents.
+* Llama Cloud: Provides access to LlamaParse that manages the parsing of uploaded
+PDF documents
+
+### Dependencies
+* Streamlit: Used for building the interactive web application interface and
+deployement.
+* LlamaParse: Responsible for document parsing services.
+* LlamaIndex: Manages indexing and storing parsed documents.
+* OpenAI: Provides the core functionality for both the embedding model and the Q&A
+agent.
