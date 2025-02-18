@@ -74,9 +74,9 @@ context extraction).
 interface for document uploads and interaction. Users are required to input their
 OpenAI API key to use the application
 * Backend:
-** LlamaParse: Responsible for parsing the PDF files and generating the initial
+  * LlamaParse: Responsible for parsing the PDF files and generating the initial
 text data for processing.
-** Llama Index: Handles the indexing, transformation (chunking), and storage of
+  * Llama Index: Handles the indexing, transformation (chunking), and storage of
 the parsed document content.
-** OpenAI APIs: Powers the Q&A functionalities using OpenAI's models for
+  * OpenAI APIs: Powers the Q&A functionalities using OpenAI's models for
 language understanding and response generation.
